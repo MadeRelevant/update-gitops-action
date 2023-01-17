@@ -1,0 +1,44 @@
+name: 'Update GitOps repo'
+description: 'Used for updating a gitops repo with new image(s)'
+inputs:
+  ssh-key:  # id of input
+    description: 'SSH key that has read/write access to the GitOps repo'
+    required: true
+  gitops-repo:
+    description: 'GitOps repo to update'
+    required: true
+  gitops-repo-branch:
+    description: 'GitOps repo branch to update'
+    required: true
+    default: 'master'
+  changes-by-file:
+    description: 'JSON object with changes to make, by file as key'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout GitOps Repository
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.gitops-repo }}
+        ssh-key: ${{ inputs.ssh-key }}
+        path: gitops
+    - uses: fjogeleit/yaml-update-action@main
+      with:
+        branch: master
+        targetBranch: master
+        repository: ${{ inputs.gitops-repo }}
+        createPR: false
+        commitChange: false
+        message: ${{ github.event.head_commit.message }}
+        workDir: gitops
+        changes: ${{ inputs.changes-by-file }}
+    - name: Push changes
+      shell: bash
+      run: |
+        cd gitops
+        git config --global user.email "mig-gitops@mobilitietsfabriek.nl"
+        git config --global user.name "MIG GitOps"
+        git commit -am "${{ github.event.head_commit.message }}"
+        git push
