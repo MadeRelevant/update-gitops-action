@@ -37,7 +37,7 @@ runs:
       repository: ${{ inputs.gitops-repo }}
       createPR: false
       commitChange: false
-      message: ${{ github.event.head_commit.message }}
+      message: "Repo ${{ github.event.repository.name }} published ${{ github.event.head_commit.message || github.event.release.tag_name }} by ${{ github.actor.login }}"
       workDir: gitops
       changes: ${{ inputs.changes-by-file }}
   - name: Push changes
