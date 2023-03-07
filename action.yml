@@ -17,7 +17,8 @@ inputs:
   commit-email:
     description: 'Email address to use for the commit'
     required: true
-  commit-name:
+  commit-author:
+    default: ${{ github.triggering_actor }}
     description: 'Name to use for the commit'
     required: true
 
@@ -37,14 +38,15 @@ runs:
       repository: ${{ inputs.gitops-repo }}
       createPR: false
       commitChange: false
-      message: "Repo ${{ github.event.repository.name }} published ${{ github.event.head_commit.message || github.event.release.tag_name }} by ${{ github.actor.login }}"
       workDir: gitops
       changes: ${{ inputs.changes-by-file }}
   - name: Push changes
     shell: bash
     run: |
+      set -eux
       cd gitops
       git config --global user.email "${{ inputs.commit-email }}"
-      git config --global user.name "${{ inputs.commit-name }}"
-      git commit -am "${{ github.event.head_commit.message }}"
+      git config --global user.name "${{ inputs.commit-author }}"
+      git add -A
+      git commit --allow-empty -m "Deployed '${{ github.event.head_commit.message || github.ref_name }}' via ${{ github.repository }}"
       git push
